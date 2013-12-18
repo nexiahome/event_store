@@ -2,7 +2,6 @@ require 'event_store'
 
 EventStore.connect :adapter => :postgres, :database => 'event_store_performance', :host => 'localhost'
 
-ITERATIONS = 100_000
 DEVICES = 30_000
 EVENTS = 5_000_000
 EVENT_TYPES = 100

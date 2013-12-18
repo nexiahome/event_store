@@ -4,7 +4,7 @@ require 'benchmark'
 
 EventStore.connect :adapter => :postgres, :database => 'event_store_performance', :host => 'localhost'
 
-ITERATIONS = 100
+ITERATIONS = 100_000
 
 Benchmark.bmbm do |x|
   x.report 'Read time' do
