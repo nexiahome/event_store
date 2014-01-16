@@ -18,9 +18,18 @@ module EventStore
         # Otherwise, the newly appended events may raise erroneous concurrency errors
         @aggregate.events.multi_insert(prepared_events)
       end
+
+      take_snapshot
     end
 
     private
+
+    def take_snapshot
+      snapshot_creator = SnapshotCreator.new(@aggregate)
+      if snapshot_creator.needs_new_snapshot?
+        snapshot_creator.create_snapshot!
+      end
+    end
 
     def concurrency_issue_possible?
       @potential_concurrency_issue ||= begin
@@ -46,14 +55,12 @@ module EventStore
     end
 
     def concurrency_error
-      ConcurrencyError.new("Expected version #{@expected_version} does not occur after last version")
+      ConcurrencyError.new("Expected version #{expected_version} does not occur after last version")
     end
-
-    private
 
     def expected_version
       @expected_version ||= begin
-        last_event = @aggregate.last_event
+        last_event = @aggregate.events.last
         last_event ? last_event[:version] + 1 : Float::INFINITY
       end
     end
