@@ -24,6 +24,35 @@ module EventStore
       @events_query ||= EventStore.db.from(@event_table).where(:aggregate_id => @id.to_s).order(:version)
     end
 
+    def events_from(version_number, max = nil)
+      events.limit(max).where{ version >= version_number.to_i }.all.map do |event|
+        event[:serialized_event] = EventStore.unescape_bytea(event[:serialized_event])
+        event
+      end
+    end
+
+    def event_stream_between(start_time, end_time, fully_qualified_names = [])
+      query = events.where(occurred_at: start_time..end_time)
+      query = query.where(fully_qualified_name: fully_qualified_names) if fully_qualified_names && fully_qualified_names.any?
+      query.all.map {|e| e[:serialized_event] = EventStore.unescape_bytea(e[:serialized_event]); e}
+    end
+
+    def event_stream
+      events.all.map {|e| e[:serialized_event] = EventStore.unescape_bytea(e[:serialized_event]); e}
+    end
+
+    def delete_events!
+      events.delete
+    end
+
+    def version
+      (EventStore.redis.hget(@snapshot_version_table, :current_version) || -1).to_i
+    end
+
+    def last_event
+      snapshot.last
+    end
+
     def snapshot
       events_hash = auto_rebuild_snapshot(read_raw_snapshot)
       snap = []
@@ -44,37 +73,8 @@ module EventStore
       EventAppender.new(self).store_snapshot(corrected_events)
     end
 
-    def events_from(version_number, max = nil)
-      events.limit(max).where{ version >= version_number.to_i }.all.map do |event|
-        event[:serialized_event] = EventStore.unescape_bytea(event[:serialized_event])
-        event
-      end
-    end
-
-    def event_stream_between(start_time, end_time, fully_qualified_names = [])
-      query = events.where(occurred_at: start_time..end_time)
-      query = query.where(fully_qualified_name: fully_qualified_names) if fully_qualified_names && fully_qualified_names.any?
-      query.all.map {|e| e[:serialized_event] = EventStore.unescape_bytea(e[:serialized_event]); e}
-    end
-
-    def event_stream
-      events.all.map {|e| e[:serialized_event] = EventStore.unescape_bytea(e[:serialized_event]); e}
-    end
-
-    def last_event
-      snapshot.last
-    end
-
-    def version
-      (EventStore.redis.hget(@snapshot_version_table, :current_version) || -1).to_i
-    end
-
     def delete_snapshot!
       EventStore.redis.del [@snapshot_table, @snapshot_version_table]
-    end
-
-    def delete_events!
-      events.delete
     end
 
   private

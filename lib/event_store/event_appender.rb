@@ -46,16 +46,6 @@ module EventStore
     end
 
   private
-    def has_concurrency_issue?(event)
-      event[:version] <= current_version
-    end
-
-    def current_version_numbers
-      current_versions = @redis.hgetall(@aggregate.snapshot_version_table)
-      current_versions.default = -1
-      current_versions
-    end
-
     def snapshot_event(event)
       [
         event[:fully_qualified_name],
@@ -73,6 +63,17 @@ module EventStore
       ]
     end
 
+    def current_version_numbers
+      current_versions = @redis.hgetall(@aggregate.snapshot_version_table)
+      current_versions.default = -1
+      current_versions
+    end
+
+    def current_version
+      @current_version ||= @aggregate.version
+    end
+    alias :set_current_version :current_version
+
     def prepare_event(raw_event)
       raise ArgumentError.new("Cannot Append a Nil Event") unless raw_event
       { :version              => raw_event.version.to_i,
@@ -82,15 +83,13 @@ module EventStore
         :fully_qualified_name => raw_event.fully_qualified_name }
     end
 
+    def has_concurrency_issue?(event)
+      event[:version] <= current_version
+    end
+
     def concurrency_error(event)
       ConcurrencyError.new("The version of the event being added (version #{event[:version]}) is <= the current version (version #{current_version})")
     end
-
-    private
-    def current_version
-      @current_version ||= @aggregate.version
-    end
-    alias :set_current_version :current_version
 
     def validate!(event_hash)
       [:aggregate_id, :fully_qualified_name, :occurred_at, :serialized_event, :version].each do |attribute_name|
