@@ -22,6 +22,11 @@ module EventStore
   SNAPSHOT_DELIMITER     = "__NexEvStDelim__"
   SNAPSHOT_KEY_DELIMITER = ":"
   NO_SUB_KEY              = "NO_SUB_KEY"
+  FACEPLATE_PROXY_CONFIG_SAVE_EVENT_HISTORY = "FACEPLATE_PROXY_CONFIG_SAVE_EVENT_HISTORY"
+
+  def self.save_event_history?
+    ENV.fetch(FACEPLATE_PROXY_CONFIG_SAVE_EVENT_HISTORY, true).to_s == true.to_s
+  end
 
   def self.db_config
     raw_db_config[@environment.to_s][@adapter.to_s]

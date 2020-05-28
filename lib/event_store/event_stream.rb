@@ -15,29 +15,31 @@ module EventStore
     end
 
     def append(raw_events, logger)
-      prepared_events = raw_events.map do |raw_event|
-        event = prepare_event(raw_event)
-        ensure_all_attributes_have_values!(event)
-        event
-      end
-
-      prepared_events.each do |event|
-        event_hash = event.dup.reject! { |k,v| k == :fully_qualified_name }
-        event_table = insert_table(Time.now)
-
-        begin
-          id = event_table.insert(event_hash)
-        rescue Sequel::NotNullConstraintViolation
-          fully_qualified_names.insert(fully_qualified_name: event[:fully_qualified_name])
-          id = event_table.insert(event_hash)
+      if EventStore.save_event_history?
+        prepared_events = raw_events.map do |raw_event|
+          event = prepare_event(raw_event)
+          ensure_all_attributes_have_values!(event)
+          event
         end
 
-        logger.debug("EventStream#append, setting id #{id} for #{event_hash.inspect}")
+        prepared_events.each do |event|
+          event_hash = event.dup.reject! { |k,v| k == :fully_qualified_name }
+          event_table = insert_table(Time.now)
 
-        event[:id] = id
+          begin
+            id = event_table.insert(event_hash)
+          rescue Sequel::NotNullConstraintViolation
+            fully_qualified_names.insert(fully_qualified_name: event[:fully_qualified_name])
+            id = event_table.insert(event_hash)
+          end
+
+          logger.debug("EventStream#append, setting id #{id} for #{event_hash.inspect}")
+
+          event[:id] = id
+        end
+
+        yield(prepared_events) if block_given?
       end
-
-      yield(prepared_events) if block_given?
     end
 
     def insert_table(occurred_at)
