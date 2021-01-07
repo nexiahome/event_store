@@ -1,5 +1,4 @@
 require "spec_helper"
-require "mock_redis"
 
 module EventStore
   describe Snapshot do
