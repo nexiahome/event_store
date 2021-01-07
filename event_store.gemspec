@@ -23,7 +23,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rspec", "~> 3.8"
   spec.add_development_dependency "guard-rspec", "~> 4.5"
   spec.add_development_dependency "byebug", "~> 5.0"
-  spec.add_development_dependency "mock_redis", "~> 0.13"
+  spec.add_development_dependency "mock_redis", "~> 0.27"
 
   spec.add_dependency "sequel", "~> 4.49"
   spec.add_dependency "sequel-vertica", "~> 0.3"
