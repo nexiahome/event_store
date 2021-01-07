@@ -21,8 +21,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "bundler", "~> 2.2"
   spec.add_development_dependency "rake", "~> 12.0"
   spec.add_development_dependency "rspec", "~> 3.8"
-  spec.add_development_dependency "guard-rspec", "~> 4.5"
-  spec.add_development_dependency "byebug", "~> 5.0"
+  spec.add_development_dependency "byebug", "~> 11.1"
   spec.add_development_dependency "mock_redis", "~> 0.27"
 
   spec.add_dependency "sequel", "~> 4.49"
